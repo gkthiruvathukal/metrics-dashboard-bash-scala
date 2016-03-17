@@ -11,7 +11,7 @@ import scala.sys.process._
 object KlocSysScala extends IO with GitBashExec{
 
   def main(args:Array[String]): Unit ={
-
+    val t1 = System.currentTimeMillis()
     val lines = scala.io.Source.stdin.getLines
     val header = lines.next()
     val cloneCommand = parseLine(header)
@@ -51,6 +51,7 @@ object KlocSysScala extends IO with GitBashExec{
     })
     val deleteCode = Seq("/bin/sh","-c","rm -rf linux").!!
    // result
+    println("THE TOTAL COMPUTATION TIME IS :"+(System.currentTimeMillis()-t1))
 
 
   }
