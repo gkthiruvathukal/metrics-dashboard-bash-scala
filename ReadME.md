@@ -9,7 +9,8 @@
     1. Get the username, repository name and branch name from the frontend.
     2. Clone the repository in a temporary location, which will be deleted once the data is received
     3. Create folders for storing the respective commit object - the folder name is the commit sha for that commit
-    4. Extract cloc, commit date and other required info (TODO - complete this part)
-    5. 
+    4. Extract cloc, commit date, commit SHA and other required info 
+    5. Calculate the Range*LOC for the commits per file
+    6. calculate Defect Density, Spoilage and Productivity
 
 
