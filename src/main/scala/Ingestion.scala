@@ -109,67 +109,7 @@ object Ingestion extends gitbash.GitBashExec {
         })
       })
     }
-
-    /*val (rddTime, rddSpace, rdd) = performance {
-      spark.parallelize(fileList, slices).map {
-        fileName => countLinesInFile(fileName)
-      }
-    }
-
-
-
-    val (computeTimeDetails, computeSpaceDetails, text) = performance {
-      rdd.map { fileInfo => fileInfo.toString + "\n" } reduce (_ + _)
-    }
-
-    // prepare data to be saved in MongoDB
-
-
-    // save information in MongoDB
-
-
-
-    // perform distributed line counting and sum up all individual times to get
-    // an idea of the actual workload of reading all files serially
-
-    val (computeIndividualTime, computeIndividualSpace, sumIndividualTime) = performance {
-      rdd map { _.time } reduce (_ + _)
-    }
-
-    // This shows how to count the number of unique hosts involved
-    // in the computation.
-
-    val pairs = rdd.map(lc => (lc.hostname, 1))
-    val counts = pairs.reduceByKey((a, b) => a + b)
-
-    // perform distributed line counting but only project the total line count
-
-    val (computeTime, computeSpace, sumLineCount) = performance {
-      rdd map { _.lineCount } reduce (_ + _)
-    }
-
-    // TODO: Get this into CSV form or something better for analysis
-
-    log.info("Nodes Used")
-    log.info(counts.count())
-    counts.collect() foreach log.info
-
-    log.info("File Line Counts")
-    log.info(text)
-
-    log.info("Results")
-    log.info(s"fileList.length=${fileList.length}")
-    log.info(s"sumLineCount=$sumLineCount")
-
-    log.info("Statistics")
-    log.info(s"rddTime=${rddTime.time in Milliseconds}")
-    log.info(s"lsTime=${lsTime.time in Milliseconds}")
-    log.info(s"computeTime=${computeTime.time in Milliseconds}")
-    log.info(s"sumIndividualTime=${sumIndividualTime.time in Milliseconds}")
-
-    log.info("Quick look at memory on each Spark node")
-    log.info(rddSpace.free)*/
-    // spark.stop()
+    spark.stop()
   }
 
 }
