@@ -4,9 +4,13 @@
 
 package edu.luc.cs.metrics.dashboard
 
+import com.mongodb.casbah.Imports._
 import org.apache.spark._
 import scala.sys.process._
+import scala.io.Source
 import scala.util.Try
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory
 
 object Ingestion extends gitbash.GitBashExec {
 
@@ -32,6 +36,7 @@ object Ingestion extends gitbash.GitBashExec {
   }
 
   def main(args: Array[String]) {
+    val log = LoggerFactory.getLogger(Ingestion.getClass)
     val conf = new SparkConf().setAppName("LineCount File I/O")
     val spark = new SparkContext(conf)
 
@@ -55,9 +60,9 @@ object Ingestion extends gitbash.GitBashExec {
     // create RDD to make copies of commit objects locally -- one folder per commit object -- abort this if memory is insufficient
     val (rddTime, rddSpace, rdd) = performance {
       val inputRDD = spark.textFile(reponame + "/logSHA.txt")
-      println(inputRDD.first())
+      log.info(inputRDD.first())
       inputRDD.foreach(sha => {
-        println("THIS IS SHA " + sha)
+        log.info("THIS IS SHA " + sha)
         //create sha dir in commits/ inside the cloned repository
         gitExec("cd " + reponame + " && mkdir -p commits/" + sha)
         // git checkout into sha directory
@@ -65,6 +70,7 @@ object Ingestion extends gitbash.GitBashExec {
         gitExec(cdCommand + " git init")
         gitExec(cdCommand + " git remote add parentNode ../../") // remote add to repo being tracked
         gitExec(cdCommand + " git pull parentNode " + branchname)
+        gitExec(cdCommand + " git reset --hard " + sha)
         // perform distributed line counting using cloc per file and print all information obtained
         gitExec(cdCommand + " cloc --by-file --report_file=clocByFile.txt .")
       })
@@ -77,11 +83,28 @@ object Ingestion extends gitbash.GitBashExec {
       inputRDDforStore.foreach(sha => {
 
         //for each sha folder - create another RDD to read the cloc result and store in the DB
-        val clocResultRDD = spark.textFile(reponame + "/commits/" + sha+"/clocByFile.txt")
-        clocResultRDD.filter(_.startsWith("./")).foreach(clocs =>{
-          val data = Try(clocs.split(" +")) getOrElse(Array(""))
-          if(data.length >=4){
+        val clocResultRDD = Source.fromFile(reponame + "/commits/" + sha + "/clocByFile.txt") getLines ()
+        val cdCommand = "cd " + reponame + "/commits/" + sha + " &&"
 
+        clocResultRDD.filter(_.startsWith("./")).foreach(clocs => {
+          val data = Try(clocs.split(" +")) getOrElse (Array(""))
+          data match {
+            case Array(filepath, blank, comment, code) =>
+
+              // store the results in MongoDB here
+              val filename = filepath.replaceAll("\\.", "")
+              val collectionName = filename.replaceFirst("/", "").replaceAll("/", "_")
+              val mongoClient = MongoClient("localhost", 27017)
+              val db = mongoClient(username + "_" + reponame + "_" + branchname)
+              val collection = db(collectionName)
+              val commitDate = gitCommitsListExec(cdCommand + " git log -1 --pretty=format:'%ci'")
+              //collection.insert(MongoDBObject("date" -> commitDate))
+              collection.update(MongoDBObject("date" -> commitDate), $set(
+                "commitSha" -> sha,
+                "loc" -> (blank.toInt + comment.toInt + code.toInt).toString, "filename" -> filepath, "sorted" -> false
+              ), true, true)
+              log.info(commitDate)
+            case _ => "This is malformed cloc result"
           }
         })
       })
@@ -127,25 +150,25 @@ object Ingestion extends gitbash.GitBashExec {
 
     // TODO: Get this into CSV form or something better for analysis
 
-    println("Nodes Used")
-    println(counts.count())
-    counts.collect() foreach println
+    log.info("Nodes Used")
+    log.info(counts.count())
+    counts.collect() foreach log.info
 
-    println("File Line Counts")
-    println(text)
+    log.info("File Line Counts")
+    log.info(text)
 
-    println("Results")
-    println(s"fileList.length=${fileList.length}")
-    println(s"sumLineCount=$sumLineCount")
+    log.info("Results")
+    log.info(s"fileList.length=${fileList.length}")
+    log.info(s"sumLineCount=$sumLineCount")
 
-    println("Statistics")
-    println(s"rddTime=${rddTime.time in Milliseconds}")
-    println(s"lsTime=${lsTime.time in Milliseconds}")
-    println(s"computeTime=${computeTime.time in Milliseconds}")
-    println(s"sumIndividualTime=${sumIndividualTime.time in Milliseconds}")
+    log.info("Statistics")
+    log.info(s"rddTime=${rddTime.time in Milliseconds}")
+    log.info(s"lsTime=${lsTime.time in Milliseconds}")
+    log.info(s"computeTime=${computeTime.time in Milliseconds}")
+    log.info(s"sumIndividualTime=${sumIndividualTime.time in Milliseconds}")
 
-    println("Quick look at memory on each Spark node")
-    println(rddSpace.free)*/
+    log.info("Quick look at memory on each Spark node")
+    log.info(rddSpace.free)*/
     // spark.stop()
   }
 
