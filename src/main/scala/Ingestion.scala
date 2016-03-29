@@ -6,6 +6,7 @@ package edu.luc.cs.metrics.dashboard
 
 import org.apache.spark._
 import scala.sys.process._
+import scala.util.Try
 
 object Ingestion extends gitbash.GitBashExec {
 
@@ -48,10 +49,43 @@ object Ingestion extends gitbash.GitBashExec {
 
     // get commit count and commit hash
     val (shaTime, shaSpace, commitSHAList) = performance {
-        gitExec("cd " + reponame + " && git log --pretty=format:'%H' > logSHA.txt")
+      gitExec("cd " + reponame + " && git log --pretty=format:'%H' > logSHA.txt")
     }
 
     // create RDD to make copies of commit objects locally -- one folder per commit object -- abort this if memory is insufficient
+    val (rddTime, rddSpace, rdd) = performance {
+      val inputRDD = spark.textFile(reponame + "/logSHA.txt")
+      println(inputRDD.first())
+      inputRDD.foreach(sha => {
+        println("THIS IS SHA " + sha)
+        //create sha dir in commits/ inside the cloned repository
+        gitExec("cd " + reponame + " && mkdir -p commits/" + sha)
+        // git checkout into sha directory
+        val cdCommand = "cd " + reponame + "/commits/" + sha + " &&"
+        gitExec(cdCommand + " git init")
+        gitExec(cdCommand + " git remote add parentNode ../../") // remote add to repo being tracked
+        gitExec(cdCommand + " git pull parentNode " + branchname)
+        // perform distributed line counting using cloc per file and print all information obtained
+        gitExec(cdCommand + " cloc --by-file --report_file=clocByFile.txt .")
+      })
+    }
+
+    // parse the cloc result and store in MongoDB
+    val (storeTime, storeSpace, storerdd) = performance {
+      val inputRDDforStore = spark.textFile(reponame + "/logSHA.txt")
+
+      inputRDDforStore.foreach(sha => {
+
+        //for each sha folder - create another RDD to read the cloc result and store in the DB
+        val clocResultRDD = spark.textFile(reponame + "/commits/" + sha+"/clocByFile.txt")
+        clocResultRDD.filter(_.startsWith("./")).foreach(clocs =>{
+          val data = Try(clocs.split(" +")) getOrElse(Array(""))
+          if(data.length >=4){
+
+          }
+        })
+      })
+    }
 
     /*val (rddTime, rddSpace, rdd) = performance {
       spark.parallelize(fileList, slices).map {
@@ -59,7 +93,7 @@ object Ingestion extends gitbash.GitBashExec {
       }
     }
 
-    // perform distributed line counting using cloc per file and print all information obtained
+
 
     val (computeTimeDetails, computeSpaceDetails, text) = performance {
       rdd.map { fileInfo => fileInfo.toString + "\n" } reduce (_ + _)

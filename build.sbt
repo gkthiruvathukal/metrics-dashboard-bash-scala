@@ -2,7 +2,8 @@ name := "metrics-dashboard-bash-scala"
 
 version := "1.0"
 
-scalaVersion := "2.11.7"
+//scopt works with this version of scala
+scalaVersion := "2.10.6"
 
 resolvers += "Typesafe repository releases" at "http://repo.typesafe.com/typesafe/releases/"
 
