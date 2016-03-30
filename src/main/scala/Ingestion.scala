@@ -107,7 +107,6 @@ object Ingestion extends gitbash.GitBashExec {
         }).toList
       })
     }
-    gitCommitsListExec(s"rm -rf $reponame")
 
     storerdd.saveAsTextFile("FinalJSVALS")
     log.info("Statistics")
@@ -123,6 +122,7 @@ object Ingestion extends gitbash.GitBashExec {
     log.info(s"git store space: ${storeSpace.memUsed}")
     log.info(s"total time: ${shaSpace.memUsed + rddSpace.memUsed + storeSpace.memUsed}")
     spark.stop()
+   // gitCommitsListExec(s"rm -rf $reponame")
   }
 
 }
