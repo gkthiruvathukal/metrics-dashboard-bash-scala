@@ -64,7 +64,7 @@ object Ingestion extends gitbash.GitBashExec {
       val inputRDD = spark.textFile(reponame + "/logSHA.txt")
       log.info(inputRDD.first())
       gitExec("cd " + reponame + " && mkdir commits")
-      /*inputRDD.foreach(sha => {
+      inputRDD.foreach(sha => {
         log.info("THIS IS SHA " + sha)
         //create sha dir in commits/ inside the cloned repository
         gitExec("cd " + reponame + "/commits && mkdir " + sha)
@@ -76,7 +76,7 @@ object Ingestion extends gitbash.GitBashExec {
         gitExec(cdCommand + " git reset --hard " + sha)
         // perform distributed line counting using cloc per file and print all information obtained
         gitExec(cdCommand + " /home/thiruvat/code/cloc/cloc --by-file --report_file=clocByFile.txt .")
-      })*/
+      })
     }
 
     // parse the cloc result and store in MongoDB
