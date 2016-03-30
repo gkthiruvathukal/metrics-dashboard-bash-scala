@@ -76,9 +76,10 @@ object Ingestion extends gitbash.GitBashExec {
         gitExec(cdCommand + " git reset --hard " + sha)
         // perform distributed line counting using cloc per file and print all information obtained
         gitExec(cdCommand + " /home/thiruvat/code/cloc/cloc --by-file --report_file=clocByFile.txt .")
-      }).count()
+      })
     }
 
+    log.info( rdd.reduce(_+_).toString )
     // parse the cloc result and store in MongoDB
     /*val (storeTime, storeSpace, storerdd) = performance {
       val inputRDDforStore = spark.textFile(reponame + "/logSHA.txt")
