@@ -103,6 +103,7 @@ object Ingestion extends gitbash.GitBashExec {
         val writer = new PrintWriter(new File("/home/shilpika/scratch/"+reponame + "/commits/"+sha+".txt"))
         clocResult.foreach(x => writer.write(x.compactPrint))
         writer.close()
+        "/home/shilpika/scratch/"+reponame + "/commits/"+sha+".txt"
       })
     }
     rdd.saveAsTextFile("finalRES")
