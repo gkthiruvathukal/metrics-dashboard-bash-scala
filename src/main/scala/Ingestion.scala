@@ -64,7 +64,7 @@ object Ingestion extends gitbash.GitBashExec {
       val inputRDD = spark.textFile(reponame + "/logSHA.txt")
       log.info(inputRDD.first())
       gitExec("cd " + reponame + " && mkdir commits")
-      inputRDD.foreach(sha => {
+      /*inputRDD.foreach(sha => {
         log.info("THIS IS SHA " + sha)
         //create sha dir in commits/ inside the cloned repository
         gitExec("cd " + reponame + "/commits && mkdir " + sha)
@@ -76,11 +76,11 @@ object Ingestion extends gitbash.GitBashExec {
         gitExec(cdCommand + " git reset --hard " + sha)
         // perform distributed line counting using cloc per file and print all information obtained
         gitExec(cdCommand + " /home/thiruvat/code/cloc/cloc --by-file --report_file=clocByFile.txt .")
-      })
+      })*/
     }
 
     // parse the cloc result and store in MongoDB
-    val (storeTime, storeSpace, storerdd) = performance {
+    /*val (storeTime, storeSpace, storerdd) = performance {
       val inputRDDforStore = spark.textFile(reponame + "/logSHA.txt")
 
       inputRDDforStore.map(sha => {
@@ -121,7 +121,7 @@ object Ingestion extends gitbash.GitBashExec {
     log.info(s"git clone space : ${shaSpace.memUsed}")
     log.info(s"git checkout space: ${rddSpace.memUsed}")
     log.info(s"git store space: ${storeSpace.memUsed}")
-    log.info(s"total time: ${shaSpace.memUsed + rddSpace.memUsed + storeSpace.memUsed}")
+    log.info(s"total time: ${shaSpace.memUsed + rddSpace.memUsed + storeSpace.memUsed}")*/
     spark.stop()
     // gitCommitsListExec(s"rm -rf $reponame")
   }
