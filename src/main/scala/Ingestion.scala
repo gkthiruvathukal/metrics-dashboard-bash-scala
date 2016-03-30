@@ -105,7 +105,7 @@ object Ingestion extends gitbash.GitBashExec {
     log.info("Time")
     log.info(s"git clone time : ${shaTime.milliseconds}")
     log.info(s"git clone time : ${shaSpace.memUsed}")
-    shaSpace.freeMemory
+    //shaSpace.freeMemory
     log.info( "DONE" )
     // parse the cloc result and store in MongoDB
     /*val (storeTime, storeSpace, storerdd) = performance {
