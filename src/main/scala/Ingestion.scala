@@ -82,13 +82,13 @@ object Ingestion extends gitbash.GitBashExec {
     val (storeTime, storeSpace, storerdd) = performance {
       val inputRDDforStore = spark.textFile(reponame + "/logSHA.txt")
 
-      val oF = inputRDDforStore.map(sha => {
+      inputRDDforStore.map(sha => {
 
         //for each sha folder - create another RDD to read the cloc result and store in the DB
         val clocResultRDD = Source.fromFile(reponame + "/commits/" + sha + "/clocByFile.txt") getLines ()
         val cdCommand = "cd " + reponame + "/commits/" + sha + " &&"
 
-        val s = clocResultRDD.filter(_.startsWith("./")).map(clocs => {
+        clocResultRDD.filter(_.startsWith("./")).map(clocs => {
           val data = Try(clocs.split(" +")) getOrElse (Array(""))
           data match {
             case Array(filepath, blank, comment, code) =>
@@ -104,12 +104,11 @@ object Ingestion extends gitbash.GitBashExec {
               output
             case _ => """{"error":"This is malformed cloc result"}""".parseJson
           }
-        })
-        val c = s.toList
-        c
+        }).toList
       })
-      oF
     }
+    gitCommitsListExec(s"rm -rf $reponame")
+
     storerdd.saveAsTextFile("FinalJSVALS")
     log.info("Statistics")
     log.info("Time")
