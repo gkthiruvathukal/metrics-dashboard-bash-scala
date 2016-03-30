@@ -50,36 +50,36 @@ object Ingestion extends gitbash.GitBashExec {
 
     // clone the repository locally
     val (cloneTime, cloneSpace, cloneRepo) = performance {
-      gitCloneExec("git clone https://github.com/" + username + "/" + reponame + ".git")
-      gitCommitsListExec("cd " + reponame + " && git checkout " + branchname)
+      gitCommitsListExec("cd /scratch && mkdir shilpika && cd shilpika && git clone https://github.com/" + username + "/" + reponame + ".git")
+      gitCommitsListExec("cd /scratch/shilpika/" + reponame + " && git checkout " + branchname)
     }
 
     // get commit count and commit hash
     val (shaTime, shaSpace, commitSHAList) = performance {
-      gitExec("cd " + reponame + " && git log --pretty=format:'%H' > logSHA.txt")
+      gitExec("cd /scratch/shilpika/" + reponame + " && git log --pretty=format:'%H' > logSHA.txt")
     }
 
     // create RDD to make copies of commit objects locally -- one folder per commit object -- abort this if memory is insufficient
     val (rddTime, rddSpace, rdd) = performance {
-      val inputRDD = spark.textFile(reponame + "/logSHA.txt")
+      val inputRDD = spark.textFile("/scratch/shilpika/"+reponame + "/logSHA.txt")
       //log.info(inputRDD.first())
-      gitExec("cd " + reponame + " && mkdir commits")
+      gitExec("cd /scratch/shilpika/" + reponame + " && mkdir commits")
       inputRDD.map(sha => {
         log.info("THIS IS SHA " + sha)
         //create sha dir in commits/ inside the cloned repository
-        gitExec("cd /home/shilpika/scratch/metrics-dashboard-bash-scala/" + reponame + "/commits && mkdir " + sha)
+        gitExec("cd /scratch/shilpika/" + reponame + "/commits && mkdir " + sha)
         // git checkout into sha directory
-        val cdCommand = "cd /home/shilpika/scratch/metrics-dashboard-bash-scala/" + reponame + "/commits/" + sha + " &&"
+        val cdCommand = "cd /scratch/shilpika/" + reponame + "/commits/" + sha + " &&"
         gitExec(cdCommand + " git init")
         gitExec(cdCommand + " git remote add parentNode ../../") // remote add to repo being tracked
         gitExec(cdCommand + " git pull parentNode " + branchname)
         gitExec(cdCommand + " git reset --hard " + sha)
         // perform distributed line counting using cloc per file and print all information obtained
-        gitExec(cdCommand + " /home/thiruvat/code/cloc/cloc --by-file --report_file=/home/shilpika/scratch/metrics-dashboard-bash-scala/"+
+        gitExec(cdCommand + " /home/thiruvat/code/cloc/cloc --by-file --report_file=/scratch/shilpika/"+
           reponame + "/commits/"+sha+"/clocByFile.txt .")
 
-        val clocResultRDD = Source.fromFile("/home/shilpika/scratch/metrics-dashboard-bash-scala/"+reponame + "/commits/" + sha + "/clocByFile.txt") getLines ()
-        val cdCommand1 = "cd /home/shilpika/scratch/metrics-dashboard-bash-scala/" + reponame + "/commits/" + sha + " &&"
+        val clocResultRDD = Source.fromFile("/scratch/shilpika/"+reponame + "/commits/" + sha + "/clocByFile.txt") getLines ()
+        //val cdCommand1 = "cd /scratch/shilpika/" + reponame + "/commits/" + sha + " &&"
 
         clocResultRDD.filter(_.startsWith("./")).map(clocs => {
           val data = Try(clocs.split(" +")) getOrElse (Array(""))
@@ -90,9 +90,9 @@ object Ingestion extends gitbash.GitBashExec {
               val filename = filepath.replaceAll("\\.", "")
               val collectionName = filename.replaceFirst("/", "").replaceAll("/", "_")
               val loc = blank.toInt + comment.toInt + code.toInt
-              val commitDate = gitCommitsListExec(cdCommand1 + " git log -1 --pretty=format:'%ci'").stripLineEnd
+              val commitDate = gitCommitsListExec(cdCommand + " git log -1 --pretty=format:'%ci'").stripLineEnd
               val output = raw"""{"date": "$commitDate" ,"commitSha": "$sha","loc": $loc,"filename": "$filepath","sorted": false}""".parseJson
-
+              gitCommitsListExec(cdCommand+" rm -rf ")
               log.info(output.compactPrint)
               output
             case _ => """{"error":"This is malformed cloc result"}""".parseJson
