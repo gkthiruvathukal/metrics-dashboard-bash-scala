@@ -63,10 +63,11 @@ object Ingestion extends gitbash.GitBashExec {
     val (rddTime, rddSpace, rdd) = performance {
       val inputRDD = spark.textFile(reponame + "/logSHA.txt")
       log.info(inputRDD.first())
+      gitExec("cd " + reponame + " && mkdir commits")
       inputRDD.foreach(sha => {
         log.info("THIS IS SHA " + sha)
         //create sha dir in commits/ inside the cloned repository
-        gitExec("cd " + reponame + " && mkdir -p commits/" + sha)
+        gitExec("cd " + reponame + "/commits && mkdir " + sha)
         // git checkout into sha directory
         val cdCommand = "cd " + reponame + "/commits/" + sha + " &&"
         gitExec(cdCommand + " git init")
@@ -122,7 +123,7 @@ object Ingestion extends gitbash.GitBashExec {
     log.info(s"git store space: ${storeSpace.memUsed}")
     log.info(s"total time: ${shaSpace.memUsed + rddSpace.memUsed + storeSpace.memUsed}")
     spark.stop()
-   // gitCommitsListExec(s"rm -rf $reponame")
+    // gitCommitsListExec(s"rm -rf $reponame")
   }
 
 }
