@@ -67,18 +67,19 @@ object Ingestion extends gitbash.GitBashExec {
       inputRDD.map(sha => {
         log.info("THIS IS SHA " + sha)
         //create sha dir in commits/ inside the cloned repository
-        gitExec("cd " + reponame + "/commits && mkdir " + sha)
+        gitExec("cd /home/shilpika/scratch/metrics-dashboard-bash-scala/" + reponame + "/commits && mkdir " + sha)
         // git checkout into sha directory
-        val cdCommand = "cd " + reponame + "/commits/" + sha + " &&"
+        val cdCommand = "cd /home/shilpika/scratch/metrics-dashboard-bash-scala/" + reponame + "/commits/" + sha + " &&"
         gitExec(cdCommand + " git init")
         gitExec(cdCommand + " git remote add parentNode ../../") // remote add to repo being tracked
         gitExec(cdCommand + " git pull parentNode " + branchname)
         gitExec(cdCommand + " git reset --hard " + sha)
         // perform distributed line counting using cloc per file and print all information obtained
-        gitExec(cdCommand + " /home/thiruvat/code/cloc/cloc --by-file --report_file=clocByFile.txt .")
+        gitExec(cdCommand + " /home/thiruvat/code/cloc/cloc --by-file --report_file=/home/shilpika/scratch/metrics-dashboard-bash-scala/"+
+          reponame + "/commits/"+sha+"/clocByFile.txt .")
 
-        val clocResultRDD = Source.fromFile(reponame + "/commits/" + sha + "/clocByFile.txt") getLines ()
-        val cdCommand1 = "cd " + reponame + "/commits/" + sha + " &&"
+        val clocResultRDD = Source.fromFile("/home/shilpika/scratch/metrics-dashboard-bash-scala/"+reponame + "/commits/" + sha + "/clocByFile.txt") getLines ()
+        val cdCommand1 = "cd /home/shilpika/scratch/metrics-dashboard-bash-scala/" + reponame + "/commits/" + sha + " &&"
 
         clocResultRDD.filter(_.startsWith("./")).map(clocs => {
           val data = Try(clocs.split(" +")) getOrElse (Array(""))
