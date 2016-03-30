@@ -11,7 +11,8 @@ import scala.io.Source
 import scala.util.Try
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory
-
+import spray.json._
+import DefaultJsonProtocol._
 object Ingestion extends gitbash.GitBashExec {
 
   case class Config(username: Option[String] = None, repository: Option[String] = None, branchname: Option[String] = None)
@@ -94,16 +95,17 @@ object Ingestion extends gitbash.GitBashExec {
               // store the results in MongoDB here
               val filename = filepath.replaceAll("\\.", "")
               val collectionName = filename.replaceFirst("/", "").replaceAll("/", "_")
-              val mongoClient = MongoClient("localhost", 27017)
-              val db = mongoClient(username + "_" + reponame + "_" + branchname)
-              val collection = db(collectionName)
+              val loc = blank.toInt + comment.toInt + code.toInt
               val commitDate = gitCommitsListExec(cdCommand + " git log -1 --pretty=format:'%ci'")
-              //collection.insert(MongoDBObject("date" -> commitDate))
-              collection.update(MongoDBObject("date" -> commitDate), $set(
-                "commitSha" -> sha,
-                "loc" -> (blank.toInt + comment.toInt + code.toInt).toString, "filename" -> filepath, "sorted" -> false
-              ), true, true)
-              log.info(commitDate)
+              val output =raw"""{
+                |"date": $commitDate ,
+                |"commitSha": $sha,
+                |"loc": $loc,
+                |"filename": $filepath,
+                |"sorted": false
+                |}""".parseJson
+
+              log.info(output.compactPrint)
             case _ => "This is malformed cloc result"
           }
         })
