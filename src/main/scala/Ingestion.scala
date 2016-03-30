@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory
 import spray.json._
 import DefaultJsonProtocol._
+import squants.time._
 object Ingestion extends gitbash.GitBashExec {
 
   case class Config(username: Option[String] = None, repository: Option[String] = None, branchname: Option[String] = None)
@@ -92,12 +93,12 @@ object Ingestion extends gitbash.GitBashExec {
           data match {
             case Array(filepath, blank, comment, code) =>
 
-              // store the results in MongoDB here
+              // store the results here
               val filename = filepath.replaceAll("\\.", "")
               val collectionName = filename.replaceFirst("/", "").replaceAll("/", "_")
               val loc = blank.toInt + comment.toInt + code.toInt
               val commitDate = gitCommitsListExec(cdCommand + " git log -1 --pretty=format:'%ci'")
-              val output =raw"""{
+              val output = raw"""{
                 |"date": $commitDate ,
                 |"commitSha": $sha,
                 |"loc": $loc,
@@ -106,11 +107,25 @@ object Ingestion extends gitbash.GitBashExec {
                 |}""".parseJson
 
               log.info(output.compactPrint)
-            case _ => "This is malformed cloc result"
+              output
+            case _ => """{"error":"This is malformed cloc result"}"""
           }
         })
       })
     }
+
+    log.info("Statistics")
+    log.info("Time")
+    log.info(s"git clone time : ${shaTime.milliseconds}")
+    log.info(s"git checkout time: ${rddTime.milliseconds}")
+    log.info(s"git store time: ${storeTime.milliseconds}")
+    log.info(s"total time: ${shaTime.milliseconds + rddTime.milliseconds + storeTime.milliseconds}")
+
+    log.info("Memory used")
+    log.info(s"git clone space : ${shaSpace.memUsed}")
+    log.info(s"git checkout space: ${rddSpace.memUsed}")
+    log.info(s"git store space: ${storeSpace.memUsed}")
+    log.info(s"total time: ${shaSpace.memUsed + rddSpace.memUsed + storeSpace.memUsed}")
     spark.stop()
   }
 
