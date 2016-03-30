@@ -76,10 +76,37 @@ object Ingestion extends gitbash.GitBashExec {
         gitExec(cdCommand + " git reset --hard " + sha)
         // perform distributed line counting using cloc per file and print all information obtained
         gitExec(cdCommand + " /home/thiruvat/code/cloc/cloc --by-file --report_file=clocByFile.txt .")
+
+        val clocResultRDD = Source.fromFile(reponame + "/commits/" + sha + "/clocByFile.txt") getLines ()
+        val cdCommand1 = "cd " + reponame + "/commits/" + sha + " &&"
+
+        clocResultRDD.filter(_.startsWith("./")).map(clocs => {
+          val data = Try(clocs.split(" +")) getOrElse (Array(""))
+          data match {
+            case Array(filepath, blank, comment, code) =>
+
+              // store the results here
+              val filename = filepath.replaceAll("\\.", "")
+              val collectionName = filename.replaceFirst("/", "").replaceAll("/", "_")
+              val loc = blank.toInt + comment.toInt + code.toInt
+              val commitDate = gitCommitsListExec(cdCommand1 + " git log -1 --pretty=format:'%ci'").stripLineEnd
+              val output = raw"""{"date": "$commitDate" ,"commitSha": "$sha","loc": $loc,"filename": "$filepath","sorted": false}""".parseJson
+
+              log.info(output.compactPrint)
+              output
+            case _ => """{"error":"This is malformed cloc result"}""".parseJson
+          }
+        }).toList
+
       })
     }
-
-    log.info( rdd.reduce(_+_).toString )
+    rdd.saveAsTextFile("finalRES")
+    log.info("Statistics")
+    log.info("Time")
+    log.info(s"git clone time : ${shaTime.milliseconds}")
+    log.info(s"git clone time : ${shaSpace.memUsed}")
+    shaSpace.freeMemory
+    log.info( "DONE" )
     // parse the cloc result and store in MongoDB
     /*val (storeTime, storeSpace, storerdd) = performance {
       val inputRDDforStore = spark.textFile(reponame + "/logSHA.txt")
