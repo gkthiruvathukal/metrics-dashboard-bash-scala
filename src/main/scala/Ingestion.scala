@@ -74,7 +74,7 @@ object Ingestion extends gitbash.GitBashExec {
         gitExec(cdCommand + " git pull parentNode " + branchname)
         gitExec(cdCommand + " git reset --hard " + sha)
         // perform distributed line counting using cloc per file and print all information obtained
-        gitExec(cdCommand + " cloc --by-file --report_file=clocByFile.txt .")
+        gitExec(cdCommand + " /home/thiruvat/code/cloc/cloc --by-file --report_file=clocByFile.txt .")
       })
     }
 
