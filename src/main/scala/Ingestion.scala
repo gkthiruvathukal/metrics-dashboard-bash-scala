@@ -62,7 +62,7 @@ object Ingestion extends gitbash.GitBashExec {
     // create RDD to make copies of commit objects locally -- one folder per commit object -- abort this if memory is insufficient
     val (rddTime, rddSpace, rdd) = performance {
       val inputRDD = spark.textFile(reponame + "/logSHA.txt")
-      log.info(inputRDD.first())
+      //log.info(inputRDD.first())
       gitExec("cd " + reponame + " && mkdir commits")
       inputRDD.map(sha => {
         log.info("THIS IS SHA " + sha)
