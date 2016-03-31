@@ -65,23 +65,15 @@ object Ingestion extends gitbash.GitBashExec {
     val (rddTime, rddSpace, rdd) = performance {
       val inputRDD = spark.textFile(reponame + "/logSHA.txt")
       //log.info(inputRDD.first())
-      gitExec("cd /home/shilpika/scratch/metrics-dashboard-bash-scala/" + reponame + " && mkdir commits")
+      //gitExec("cd /home/shilpika/scratch/metrics-dashboard-bash-scala/" + reponame + " && mkdir commits")
+      gitExec("mkdir -p " + reponame + "/commits")
       inputRDD.map(sha => {
         log.info("THIS IS SHA " + sha)
-        //create sha dir in commits/ inside the cloned repository
-        gitExec("cd /home/shilpika/scratch/metrics-dashboard-bash-scala/" + reponame + "/commits && mkdir " + sha)
-        // git checkout into sha directory
-        val cdCommand = "cd /home/shilpika/scratch/metrics-dashboard-bash-scala/" + reponame + "/commits/" + sha + " &&"
-        gitExec(cdCommand + " git init")
-        gitExec(cdCommand + " git remote add parentNode ../../") // remote add to repo being tracked
-        gitExec(cdCommand + " git pull parentNode " + branchname)
-        gitExec(cdCommand + " git reset --hard " + sha)
-        // perform distributed line counting using cloc per file and print all information obtained
-        gitExec(cdCommand + " /home/thiruvat/code/cloc/cloc --by-file --report_file=/home/shilpika/scratch/metrics-dashboard-bash-scala/"+
-          reponame + "/commits/"+sha+"/clocByFile.txt .")
+        gitExec(s"sh src/main/scala/scratch.sh $sha $reponame $branchname")
 
-        val clocResultRDD = Source.fromFile("/home/shilpika/scratch/metrics-dashboard-bash-scala/"+reponame + "/commits/" + sha + "/clocByFile.txt") getLines ()
-        val cdCommand1 = "cd /home/shilpika/scratch/metrics-dashboard-bash-scala/" + reponame + "/commits &&"
+        val clocResultRDD = Source.fromFile("commitsMetrics/" + sha + "/clocByFile.txt") getLines ()
+        //val cdCommand1 = "cd /home/shilpika/scratch/metrics-dashboard-bash-scala/" + reponame + "/commits &&"
+        val cdCommand = "cd commitsMetrics/" + sha + " &&"
 
         val clocResult = clocResultRDD.filter(_.startsWith("./")).map(clocs => {
           val data = Try(clocs.split(" +")) getOrElse (Array(""))
@@ -100,11 +92,11 @@ object Ingestion extends gitbash.GitBashExec {
             case _ => """{"error":"This is malformed cloc result"}""".parseJson
           }
         })
-        val writer = new PrintWriter(new File("/home/shilpika/scratch/metrics-dashboard-bash-scala/"+reponame + "/commits/"+sha+".txt"))
+        val writer = new PrintWriter(new File("/home/shilpika/scratch/metrics-dashboard-bash-scala/" + reponame + "/commits/" + sha + ".txt"))
         clocResult.foreach(x => writer.write(x.compactPrint))
         writer.close()
-        gitCommitsListExec(cdCommand1+" rm -rf "+sha)
-        "/home/shilpika/scratch/metrics-dashboard-bash-scala/"+reponame + "/commits/"+sha+".txt"
+        gitCommitsListExec(cdCommand + " rm -rf " + sha)
+        "/home/shilpika/scratch/metrics-dashboard-bash-scala/" + reponame + "/commits/" + sha + ".txt"
       })
     }
     rdd.saveAsTextFile("finalRES")
@@ -113,50 +105,8 @@ object Ingestion extends gitbash.GitBashExec {
     log.info(s"git clone time : ${shaTime.milliseconds}")
     log.info(s"git clone time : ${shaSpace.memUsed}")
     //shaSpace.freeMemory
-    log.info( "DONE" )
-    // parse the cloc result and store in MongoDB
-    /*val (storeTime, storeSpace, storerdd) = performance {
-      val inputRDDforStore = spark.textFile(reponame + "/logSHA.txt")
+    log.info("DONE")
 
-      inputRDDforStore.map(sha => {
-
-        //for each sha folder - create another RDD to read the cloc result and store in the DB
-        val clocResultRDD = Source.fromFile(reponame + "/commits/" + sha + "/clocByFile.txt") getLines ()
-        val cdCommand = "cd " + reponame + "/commits/" + sha + " &&"
-
-        clocResultRDD.filter(_.startsWith("./")).map(clocs => {
-          val data = Try(clocs.split(" +")) getOrElse (Array(""))
-          data match {
-            case Array(filepath, blank, comment, code) =>
-
-              // store the results here
-              val filename = filepath.replaceAll("\\.", "")
-              val collectionName = filename.replaceFirst("/", "").replaceAll("/", "_")
-              val loc = blank.toInt + comment.toInt + code.toInt
-              val commitDate = gitCommitsListExec(cdCommand + " git log -1 --pretty=format:'%ci'").stripLineEnd
-              val output = raw"""{"date": "$commitDate" ,"commitSha": "$sha","loc": $loc,"filename": "$filepath","sorted": false}""".parseJson
-
-              log.info(output.compactPrint)
-              output
-            case _ => """{"error":"This is malformed cloc result"}""".parseJson
-          }
-        }).toList
-      })
-    }
-
-    storerdd.saveAsTextFile("FinalJSVALS")
-    log.info("Statistics")
-    log.info("Time")
-    log.info(s"git clone time : ${shaTime.milliseconds}")
-    log.info(s"git checkout time: ${rddTime.milliseconds}")
-    log.info(s"git store time: ${storeTime.milliseconds}")
-    log.info(s"total time: ${shaTime.milliseconds + rddTime.milliseconds + storeTime.milliseconds}")
-
-    log.info("Memory used")
-    log.info(s"git clone space : ${shaSpace.memUsed}")
-    log.info(s"git checkout space: ${rddSpace.memUsed}")
-    log.info(s"git store space: ${storeSpace.memUsed}")
-    log.info(s"total time: ${shaSpace.memUsed + rddSpace.memUsed + storeSpace.memUsed}")*/
     spark.stop()
     // gitCommitsListExec(s"rm -rf $reponame")
   }
