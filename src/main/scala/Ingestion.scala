@@ -100,7 +100,7 @@ object Ingestion extends gitbash.GitBashExec {
             case _ => """{"error":"This is malformed cloc result"}""".parseJson
           }
         })
-        val writer = new PrintWriter(new File("/home/shilpika/scratch/"+reponame + "/commits/"+sha+".txt"))
+        val writer = new PrintWriter(new File("/home/shilpika/scratch/metrics-dashboard-bash-scala/"+reponame + "/commits/"+sha+".txt"))
         clocResult.foreach(x => writer.write(x.compactPrint))
         writer.close()
         "/home/shilpika/scratch/metrics-dashboard-bash-scala/"+reponame + "/commits/"+sha+".txt"
