@@ -94,7 +94,7 @@ object Ingestion extends gitbash.GitBashExec {
               val loc = blank.toInt + comment.toInt + code.toInt
               val commitDate = gitCommitsListExec(cdCommand + " git log -1 --pretty=format:'%ci'").stripLineEnd
               val output = raw"""{"date": "$commitDate" ,"commitSha": "$sha","loc": $loc,"filename": "$filepath","sorted": false}""".parseJson
-              gitCommitsListExec(cdCommand1+" rm -rf "+sha)
+
               log.info(output.compactPrint)
               output
             case _ => """{"error":"This is malformed cloc result"}""".parseJson
@@ -103,6 +103,7 @@ object Ingestion extends gitbash.GitBashExec {
         val writer = new PrintWriter(new File("/home/shilpika/scratch/metrics-dashboard-bash-scala/"+reponame + "/commits/"+sha+".txt"))
         clocResult.foreach(x => writer.write(x.compactPrint))
         writer.close()
+        gitCommitsListExec(cdCommand1+" rm -rf "+sha)
         "/home/shilpika/scratch/metrics-dashboard-bash-scala/"+reponame + "/commits/"+sha+".txt"
       })
     }
