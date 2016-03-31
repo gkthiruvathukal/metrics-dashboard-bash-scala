@@ -81,7 +81,7 @@ object Ingestion extends gitbash.GitBashExec {
           reponame + "/commits/"+sha+"/clocByFile.txt .")
 
         val clocResultRDD = Source.fromFile("/home/shilpika/scratch/metrics-dashboard-bash-scala/"+reponame + "/commits/" + sha + "/clocByFile.txt") getLines ()
-        //val cdCommand1 = "cd /scratch/shilpika/" + reponame + "/commits &&"
+        val cdCommand1 = "cd /scratch/shilpika/metrics-dashboard-bash-scala/" + reponame + "/commits &&"
 
         val clocResult = clocResultRDD.filter(_.startsWith("./")).map(clocs => {
           val data = Try(clocs.split(" +")) getOrElse (Array(""))
@@ -94,7 +94,7 @@ object Ingestion extends gitbash.GitBashExec {
               val loc = blank.toInt + comment.toInt + code.toInt
               val commitDate = gitCommitsListExec(cdCommand + " git log -1 --pretty=format:'%ci'").stripLineEnd
               val output = raw"""{"date": "$commitDate" ,"commitSha": "$sha","loc": $loc,"filename": "$filepath","sorted": false}""".parseJson
-              gitCommitsListExec(cdCommand+" rm -rf "+sha)
+              gitCommitsListExec(cdCommand1+" rm -rf "+sha)
               log.info(output.compactPrint)
               output
             case _ => """{"error":"This is malformed cloc result"}""".parseJson
