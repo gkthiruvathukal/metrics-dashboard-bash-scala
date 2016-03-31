@@ -81,7 +81,7 @@ object Ingestion extends gitbash.GitBashExec {
           reponame + "/commits/"+sha+"/clocByFile.txt .")
 
         val clocResultRDD = Source.fromFile("/home/shilpika/scratch/metrics-dashboard-bash-scala/"+reponame + "/commits/" + sha + "/clocByFile.txt") getLines ()
-        val cdCommand1 = "cd /scratch/shilpika/metrics-dashboard-bash-scala/" + reponame + "/commits &&"
+        val cdCommand1 = "cd /home/shilpika/scratch/metrics-dashboard-bash-scala/" + reponame + "/commits &&"
 
         val clocResult = clocResultRDD.filter(_.startsWith("./")).map(clocs => {
           val data = Try(clocs.split(" +")) getOrElse (Array(""))
