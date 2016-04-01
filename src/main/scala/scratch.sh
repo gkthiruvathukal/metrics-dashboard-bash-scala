@@ -1,4 +1,4 @@
-#! /bin/bash/
+#! /bin/bash
 
 echo "Ok, let me start..."
 
