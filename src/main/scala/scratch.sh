@@ -19,9 +19,12 @@ cd ${sha}
 
 git init
 git remote add parentNode /home/shilpika/scratch/metrics-dashboard-bash-scala/${reponame}
+pwd
 git pull parentNode ${branchname}
 git reset --hard ${sha}
 
+pwd
+echo 'cloc now'
 /home/thiruvat/code/cloc/cloc --by-file --report-file=clocByFile.txt .
-
+echo 'cloc done'
 
