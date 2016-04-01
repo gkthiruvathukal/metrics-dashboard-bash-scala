@@ -64,18 +64,16 @@ object Ingestion extends gitbash.GitBashExec {
     // create RDD to make copies of commit objects locally -- one folder per commit object -- abort this if memory is insufficient
     val (rddTime, rddSpace, rdd) = performance {
       val inputRDD = spark.textFile(reponame + "/logSHA.txt")
-      //log.info(inputRDD.first())
-      //gitExec("cd /home/shilpika/scratch/metrics-dashboard-bash-scala/" + reponame + " && mkdir commits")
-      gitExec("mkdir -p " + reponame + "/commits")
+
+      gitExec("cd " + reponame + " && mkdir commits")
       inputRDD.map(sha => {
         log.info("THIS IS SHA " + sha)
         gitExec(s"sh src/main/scala/scratch.sh $sha $reponame $branchname")
 
-        val clocResultRDD = Source.fromFile("commitsMetrics/" + sha + "/clocByFile.txt") getLines ()
-        //val cdCommand1 = "cd /home/shilpika/scratch/metrics-dashboard-bash-scala/" + reponame + "/commits &&"
+        val clocResultFile = Source.fromFile("commitsMetrics/" + sha + "/clocByFile.txt") getLines ()
         val cdCommand = "cd commitsMetrics/" + sha + " &&"
 
-        val clocResult = clocResultRDD.filter(_.startsWith("./")).map(clocs => {
+        val clocResultSorted = clocResultFile.filter(_.startsWith("./")).map(clocs => {
           val data = Try(clocs.split(" +")) getOrElse (Array(""))
           data match {
             case Array(filepath, blank, comment, code) =>
@@ -93,9 +91,9 @@ object Ingestion extends gitbash.GitBashExec {
           }
         })
         val writer = new PrintWriter(new File("/home/shilpika/scratch/metrics-dashboard-bash-scala/" + reponame + "/commits/" + sha + ".txt"))
-        clocResult.foreach(x => writer.write(x.compactPrint))
+        clocResultSorted.foreach(x => writer.write(x.compactPrint))
         writer.close()
-        gitCommitsListExec(cdCommand + " rm -rf " + sha)
+        gitCommitsListExec("cd commitsMetrics && rm -rf " + sha)
         "/home/shilpika/scratch/metrics-dashboard-bash-scala/" + reponame + "/commits/" + sha + ".txt"
       })
     }

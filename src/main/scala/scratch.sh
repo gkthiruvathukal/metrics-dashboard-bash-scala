@@ -22,6 +22,6 @@ git remote add parentNode /home/shilpika/scratch/metrics-dashboard-bash-scala/${
 git pull parentNode ${branchname}
 git reset --hard ${sha}
 
-/home/thiruvat/code/cloc/cloc --by-file --report-file=clocByFile.txt .
+/home/thiruvat/code/cloc/cloc --by-file --report-file=../clocByFile.txt .
 
 
