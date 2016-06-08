@@ -70,7 +70,7 @@ object Ingestion extends gitbash.GitBashExec {
       gitExec("cd " + cdProjects + "/" + reponame + " && mkdir commits")
       inputRDD.map(sha => {
         log.info("THIS IS SHA " + sha)
-
+        println(sha+" SHA!!!!")
         gitExec(s"sh src/main/scala/scratch.sh $sha $reponame $branchname")
 
         val clocResultFile = Source.fromFile("scratch/sshilpika/" + reponame + "/results/" + sha + "_clocByFile.txt") getLines ()
