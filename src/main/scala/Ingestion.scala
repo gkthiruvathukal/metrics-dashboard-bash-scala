@@ -65,7 +65,7 @@ object Ingestion extends gitbash.GitBashExec {
 
     // create RDD to make copies of commit objects locally -- one folder per commit object -- abort this if memory is insufficient
     val (rddTime, rddSpace, rdd) = performance {
-      val inputRDD = spark.textFile(reponame + "/logSHA.txt")
+      val inputRDD = spark.textFile(cdProjects + "/"+ reponame + "/logSHA.txt")
 
       gitExec("cd " + cdProjects + "/" + reponame + " && mkdir commits")
       inputRDD.map(sha => {
@@ -74,7 +74,6 @@ object Ingestion extends gitbash.GitBashExec {
         gitExec(s"sh src/main/scala/scratch.sh $sha $reponame $branchname")
 
         val clocResultFile = Source.fromFile("scratch/sshilpika/" + reponame + "/results/" + sha + "_clocByFile.txt") getLines ()
-        //val cdCommand = "cd " + cdProjects +"/" + reponame + "/commits" + " &&"
 
         val clocResultSorted = clocResultFile.filter(_.startsWith("./")).map(clocs => {
           val data = Try(clocs.split(" +")) getOrElse (Array(""))
