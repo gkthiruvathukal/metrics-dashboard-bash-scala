@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory
 import spray.json._
 import DefaultJsonProtocol._
 import squants.time._
-import java.io.{FileOutputStream, File, PrintWriter}
+import java.io.{ FileOutputStream, File, PrintWriter }
 object Ingestion extends gitbash.GitBashExec {
 
   case class Config(username: Option[String] = None, repository: Option[String] = None, branchname: Option[String] = None)
@@ -54,20 +54,20 @@ object Ingestion extends gitbash.GitBashExec {
 
     // clone the repository locally
     val (cloneTime, cloneSpace, cloneRepo) = performance {
-      gitCommitsListExec("cd "+cdProjects+" && git clone https://github.com/" + username + "/" + reponame + ".git")
-      gitCommitsListExec("cd " + cdProjects +"/" + reponame + " && git checkout " + branchname)
+      gitCommitsListExec("cd " + cdProjects + " && git clone https://github.com/" + username + "/" + reponame + ".git")
+      gitCommitsListExec("cd " + cdProjects + "/" + reponame + " && git checkout " + branchname)
     }
 
     // get commit count and commit hash
     val (shaTime, shaSpace, commitSHAList) = performance {
-      gitExec("cd " + cdProjects +"/" + reponame + " && git log --pretty=format:'%H' > logSHA.txt")
+      gitExec("cd " + cdProjects + "/" + reponame + " && git log --pretty=format:'%H' > logSHA.txt")
     }
 
     // create RDD to make copies of commit objects locally -- one folder per commit object -- abort this if memory is insufficient
     val (rddTime, rddSpace, rdd) = performance {
       val inputRDD = spark.textFile(reponame + "/logSHA.txt")
 
-      gitExec("cd " + cdProjects +"/" + reponame  + " && mkdir commits")
+      gitExec("cd " + cdProjects + "/" + reponame + " && mkdir commits")
       inputRDD.map(sha => {
         log.info("THIS IS SHA " + sha)
 
@@ -85,7 +85,7 @@ object Ingestion extends gitbash.GitBashExec {
               val filename = filepath.replaceAll("\\.", "")
               val collectionName = filename.replaceFirst("/", "").replaceAll("/", "_")
               val loc = blank.toInt + comment.toInt + code.toInt
-              val commitDate = Source.fromFile("scratch/sshilpika/" + reponame + "/results/"+ sha+"_date.txt") getLines() toString() stripLineEnd
+              val commitDate = Source.fromFile("scratch/sshilpika/" + reponame + "/results/" + sha + "_date.txt") getLines () toString () stripLineEnd
               val output = raw"""{"date": "$commitDate" ,"commitSha": "$sha","loc": $loc,"filename": "$filepath","sorted": false}""".parseJson
 
               log.info(output.compactPrint)
@@ -93,14 +93,14 @@ object Ingestion extends gitbash.GitBashExec {
             case _ => raw"""{"error":"This is malformed cloc result for $sha"}""".parseJson
           }
         })
-        val writer = new PrintWriter(new FileOutputStream(new File("/projects/ExaHDF5/sshilpika/" + reponame +"/" + sha + ".txt"),true))
+        val writer = new PrintWriter(new FileOutputStream(new File("/projects/ExaHDF5/sshilpika/" + reponame + "/" + sha + ".txt"), true))
         clocResultSorted.foreach(x => writer.append(x.compactPrint))
         writer.close()
-        gitCommitsListExec("cd /scratch/sshilpika/" + reponame +"/commitsMetrics && rm -rf " + sha)
-        "/projects/ExaHDF5/sshilpika/" + reponame +"/" + sha + ".txt"
+        gitCommitsListExec("cd /scratch/sshilpika/" + reponame + "/commitsMetrics && rm -rf " + sha)
+        "/projects/ExaHDF5/sshilpika/" + reponame + "/" + sha + ".txt"
       })
     }
-    rdd.saveAsTextFile("finalRES")
+
     log.info("Statistics")
     log.info("Time")
     log.info(s"git clone time : ${shaTime.milliseconds}")
