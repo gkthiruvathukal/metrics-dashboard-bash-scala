@@ -9,22 +9,45 @@ sha=${args[0]}
 reponame=${args[1]}
 branchname=${args[2]}
 
-if [ ! -d commitsMetrics ]; then
-    mkdir commitsMetrics
+cd /scratch/
+
+# base folder
+if [ ! -d sshilpika ]; then
+    mkdir sshilpika && cd sshilpika
 fi
 
-cd commitsMetrics
-mkdir ${sha}
-cd ${sha}
+# cloc
+if [ ! -d cloc ]; then
+     git clone git@github.com:AlDanial/cloc.git
+fi
+
+# repo
+if [ ! -d ${reponame} ]; then
+     time git clone /projects/ExaHDF5/sshilpika/${reponame} /scratch/sshilpika/${reponame} && cd ${reponame}
+fi
+
+if [ ! -d results ]; then
+    mkdir results
+fi
+
+if [ ! -d commitsMetrics ]; then
+    mkdir commitsMetrics && cd commitsMetrics
+fi
+
+mkdir ${sha} && cd ${sha}
 
 git init
-git remote add parentNode /home/shilpika/scratch/metrics-dashboard-bash-scala/${reponame}
+git remote add parentNode ../../
 pwd
 git pull parentNode ${branchname}
 git reset --hard ${sha}
 
+#inside scratch/sshilpika/(repo)/commitsMetrics/(sha)
+
+git log -1 --pretty=format:'%ci' >> /scratch/sshilpika/${reponame}/results/${sha}_date.txt
 pwd
 echo 'cloc now'
-/home/thiruvat/code/cloc/cloc --by-file --report-file=clocByFile.txt .
+/scratch/sshilpika/${reponame}/cloc/cloc --by-file --report-file=/scratch/sshilpika/${reponame}/results/${sha}_clocByFile.txt .
+
 echo 'cloc done'
 
