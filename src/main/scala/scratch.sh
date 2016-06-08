@@ -23,7 +23,7 @@ fi
 
 # repo
 if [ ! -d ${reponame} ]; then
-     time git clone /projects/ExaHDF5/sshilpika/${reponame} /scratch/sshilpika/${reponame} && cd ${reponame}
+     git clone /projects/ExaHDF5/sshilpika/${reponame} /scratch/sshilpika/${reponame} && cd ${reponame}
 fi
 
 if [ ! -d results ]; then
@@ -47,7 +47,7 @@ git reset --hard ${sha}
 git log -1 --pretty=format:'%ci' >> /scratch/sshilpika/${reponame}/results/${sha}_date.txt
 pwd
 echo 'cloc now'
-/scratch/sshilpika/${reponame}/cloc/cloc --by-file --report-file=/scratch/sshilpika/${reponame}/results/${sha}_clocByFile.txt .
+/scratch/sshilpika/cloc/cloc --by-file --report-file=/scratch/sshilpika/${reponame}/results/${sha}_clocByFile.txt .
 
 echo 'cloc done'
 
