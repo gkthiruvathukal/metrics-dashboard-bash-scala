@@ -92,17 +92,17 @@ object Ingestion extends gitbash.GitBashExec {
             case Array(filepath, blank, comment, code) =>
 
               // store the results in MongoDB here
-              val filename = filepath.replaceAll("\\.", "")
-              val collectionName = filename.replaceFirst("/", "").replaceAll("/", "_")
+              //val filename = filepath.replaceAll("\\.", "")
+              /*val collectionName = filename.replaceFirst("/", "").replaceAll("/", "_")
               val mongoClient = MongoClient("localhost", 27017)
               val db = mongoClient(username + "_" + reponame + "_" + branchname)
-              val collection = db(collectionName)
+              val collection = db(collectionName)*/
               val commitDate = gitCommitsListExec(cdCommand + " git log -1 --pretty=format:'%ci'")
               //collection.insert(MongoDBObject("date" -> commitDate))
-              collection.update(MongoDBObject("date" -> commitDate), $set(
+              /*collection.update(MongoDBObject("date" -> commitDate), $set(
                 "commitSha" -> sha,
                 "loc" -> (blank.toInt + comment.toInt + code.toInt).toString, "filename" -> filepath, "sorted" -> false
-              ), true, true)
+              ), true, true)*/
               log.info(commitDate)
             case _ => "This is malformed cloc result"
           }
