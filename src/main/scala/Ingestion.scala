@@ -65,7 +65,7 @@ object Ingestion extends gitbash.GitBashExec {
 
     // create RDD to make copies of commit objects locally -- one folder per commit object -- abort this if memory is insufficient
     val (rddTime, rddSpace, rdd) = performance {
-      val inputRDD = spark.textFile(cdProjects + "/"+ reponame + "/logSHA.txt")
+      val inputRDD = spark.textFile(cdProjects + "/" + reponame + "/logSHA.txt")
 
       gitExec("cd " + cdProjects + "/" + reponame + " && mkdir commits")
       inputRDD.map(sha => {
@@ -86,10 +86,12 @@ object Ingestion extends gitbash.GitBashExec {
               val loc = blank.toInt + comment.toInt + code.toInt
               val commitDate = Source.fromFile("scratch/sshilpika/" + reponame + "/results/" + sha + "_date.txt") getLines () toString () stripLineEnd
               val output = raw"""{"date": "$commitDate" ,"commitSha": "$sha","loc": $loc,"filename": "$filepath","sorted": false}""".parseJson
-
+              println(output.compactPrint)
               log.info(output.compactPrint)
               output
-            case _ => raw"""{"error":"This is malformed cloc result for $sha"}""".parseJson
+            case _ =>
+              println("error!!!")
+              raw"""{"error":"This is malformed cloc result for $sha"}""".parseJson
           }
         })
         val writer = new PrintWriter(new FileOutputStream(new File("/projects/ExaHDF5/sshilpika/" + reponame + "/" + sha + ".txt"), true))
@@ -99,7 +101,7 @@ object Ingestion extends gitbash.GitBashExec {
         "/projects/ExaHDF5/sshilpika/" + reponame + "/" + sha + ".txt"
       })
     }
-
+    rdd.saveAsTextFile("finalRES")
     log.info("Statistics")
     log.info("Time")
     log.info(s"git clone time : ${shaTime.milliseconds}")
