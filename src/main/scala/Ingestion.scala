@@ -152,7 +152,7 @@ object Ingestion extends gitbash.GitBashExec {
         "/projects/ExaHDF5/sshilpika/" + reponame + "/" + sha + ".txt"
       })
     //}
-    rdd.saveAsTextFile("finalRES")
+    //rdd.saveAsTextFile("finalRES")
     log.info("Statistics")
     log.info("Time")
     log.info(s"git clone time : ${shaTime.milliseconds}")
