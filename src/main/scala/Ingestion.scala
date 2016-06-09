@@ -111,7 +111,7 @@ object Ingestion extends gitbash.GitBashExec {
     }
 
     // create RDD to make copies of commit objects locally -- one folder per commit object -- abort this if memory is insufficient
-    //val (rddTime, rddSpace, rdd) = performance {
+    val (rddTime, rddSpace, rdd) = performance {
     val inputRDD = spark.textFile(cdProjects + "/" + reponame + "/logSHA.txt")
 
     gitExec("cd " + cdProjects + "/" + reponame + " && mkdir commits")
@@ -147,8 +147,8 @@ object Ingestion extends gitbash.GitBashExec {
       gitCommitsListExec("cd /scratch/sshilpika/" + reponame + "/commitsMetrics && rm -rf " + sha)
       "/projects/ExaHDF5/sshilpika/" + reponame + "/" + sha + ".txt"
     })
-    //}
-    //rdd.saveAsTextFile("finalRES")
+    }
+    rdd.saveAsTextFile("finalRES")
     log.info("Statistics")
     log.info("Time")
     log.info(s"git clone time : ${shaTime.milliseconds}")
