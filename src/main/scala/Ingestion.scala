@@ -70,7 +70,7 @@ object Ingestion extends gitbash.GitBashExec {
     val (rddTime, rddSpace, rdd) = performance {
       val inputRDD = spark.textFile(cdProjects + "/" + reponame + "/logSHA.txt")
       inputRDD.map(sha => {
-        val exitCode = gitExec(s"sh src/main/scala/scratch.sh $sha $reponame $branchname")
+        val exitCode = gitExecTest(s"sh src/main/scala/scratch.sh $sha $reponame $branchname")
         exitCode
 
       })

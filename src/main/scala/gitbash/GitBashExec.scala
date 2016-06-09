@@ -26,4 +26,10 @@ trait GitBashExec {
     exitCode
   }
 
+  def gitExecTest(command: String): String = {
+
+    Seq("/bin/sh", "-c", command).!!
+
+  }
+
 }
