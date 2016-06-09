@@ -72,7 +72,7 @@ object Ingestion extends gitbash.GitBashExec {
         log.info("THIS IS SHA " + sha)
         println(sha+" SHA!!!!")
         gitExec(s"sh src/main/scala/scratch.sh $sha $reponame $branchname")
-
+        log.info("done executing bash file")
         val clocResultFile = Source.fromFile("/scratch/sshilpika/" + reponame + "/results/" + sha + "_clocByFile.txt") getLines ()
 
         val clocResultSorted = clocResultFile.filter(_.startsWith("./")).map(clocs => {
