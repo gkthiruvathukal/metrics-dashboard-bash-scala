@@ -18,7 +18,7 @@ fi
 
 # cloc
 if [ ! -d cloc ]; then
-     git clone git@github.com:AlDanial/cloc.git
+     git clone https://github.com/AlDanial/cloc.git
 fi
 
 # repo
@@ -37,8 +37,7 @@ fi
 mkdir ${sha} && cd ${sha}
 
 git init
-git remote add parentNode ../../
-pwd
+git remote add parentNode /scratch/sshilpika/${reponame}
 git pull parentNode ${branchname}
 git reset --hard ${sha}
 
