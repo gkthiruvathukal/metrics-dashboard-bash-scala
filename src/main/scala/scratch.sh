@@ -13,8 +13,10 @@ cd /scratch/
 
 # base folder
 if [ ! -d sshilpika ]; then
-    mkdir sshilpika && cd sshilpika
+    mkdir sshilpika
 fi
+
+cd sshilpika
 
 # cloc
 if [ ! -d cloc ]; then
@@ -23,16 +25,20 @@ fi
 
 # repo
 if [ ! -d ${reponame} ]; then
-     git clone /projects/ExaHDF5/sshilpika/${reponame} /scratch/sshilpika/${reponame} && cd ${reponame}
+     git clone /projects/ExaHDF5/sshilpika/${reponame} /scratch/sshilpika/${reponame}
 fi
+
+cd ${reponame}
 
 if [ ! -d results ]; then
     mkdir results
 fi
 
 if [ ! -d commitsMetrics ]; then
-    mkdir commitsMetrics && cd commitsMetrics
+    mkdir commitsMetrics
 fi
+
+cd commitsMetrics
 
 mkdir ${sha} && cd ${sha}
 
