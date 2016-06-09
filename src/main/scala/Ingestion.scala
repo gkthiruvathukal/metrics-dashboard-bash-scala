@@ -70,9 +70,10 @@ object Ingestion extends gitbash.GitBashExec {
     val (rddTime, rddSpace, rdd) = performance {
       val inputRDD = spark.textFile(cdProjects + "/" + reponame + "/logSHA.txt")
       inputRDD.map(sha => {
-        log.info("THIS IS SHA " + sha)
-        println(sha+" SHA!!!!")
-        sha})
+        val exitCode = gitExec(s"sh src/main/scala/scratch.sh $sha $reponame $branchname")
+        exitCode
+
+      })
 
     }
 
@@ -117,11 +118,8 @@ object Ingestion extends gitbash.GitBashExec {
 
       gitExec("cd " + cdProjects + "/" + reponame + " && mkdir commits")
       inputRDD.map(sha => {
-        log.info("THIS IS SHA " + sha)
-        println(sha+" SHA!!!!")
+
         val bashRes = gitExec(s"sh src/main/scala/scratch.sh $sha $reponame $branchname")
-        log.info("This is the bash resut"+bashRes)
-        log.info("done executing bash file")
         val clocResultFile = Source.fromFile("/scratch/sshilpika/" + reponame + "/results/" + sha + "_clocByFile.txt") getLines ()
 
         val clocResultSorted = clocResultFile.filter(_.startsWith("./")).map(clocs => {
