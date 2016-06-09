@@ -84,7 +84,8 @@ object Ingestion extends gitbash.GitBashExec {
               val filename = filepath.replaceAll("\\.", "")
               val collectionName = filename.replaceFirst("/", "").replaceAll("/", "_")
               val loc = blank.toInt + comment.toInt + code.toInt
-              val commitDate = Source.fromFile("/scratch/sshilpika/" + reponame + "/results/" + sha + "_date.txt") getLines () toString () stripLineEnd
+              val dateFile = Source.fromFile("/scratch/sshilpika/" + reponame + "/results/" + sha + "_date.txt").getLines()
+              val commitDate = if(dateFile.hasNext) dateFile.next() else  ""
               val output = raw"""{"date": "$commitDate" ,"commitSha": "$sha","loc": $loc,"filename": "$filepath","sorted": false}""".parseJson
               println(output.compactPrint)
               log.info(output.compactPrint)
