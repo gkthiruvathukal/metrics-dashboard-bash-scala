@@ -38,7 +38,55 @@ object Ingestion extends gitbash.GitBashExec {
     parser.parse(args, Config())
   }
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
+    val log = LoggerFactory.getLogger(Ingestion.getClass)
+    val conf = new SparkConf().setAppName("Metrics Data - KLOC")
+    val spark = new SparkContext(conf)
+
+    // getting the values for ingestion using scopt
+    val appConfig = parseCommandLine(args).getOrElse(Config())
+    val username = appConfig.username.getOrElse("")
+    val reponame = appConfig.repository.getOrElse("")
+    val branchname = appConfig.branchname.getOrElse("master")
+
+    log.info(username+" "+reponame+" "+branchname)
+    val cdProjects = "/projects/ExaHDF5/sshilpika"
+
+    val (cloneTime, cloneSpace, cloneRepo) = performance {
+      gitCommitsListExec("cd " + cdProjects + " && git clone https://github.com/" + username + "/" + reponame + ".git")
+      gitCommitsListExec("cd " + cdProjects + "/" + reponame + " && git checkout " + branchname)
+    }
+
+    log.info(cloneTime+" "+cloneSpace+" "+cloneRepo)
+
+    // get commit count and commit hash
+    val (shaTime, shaSpace, commitSHAList) = performance {
+      gitExec("cd " + cdProjects + "/" + reponame + " && git log --pretty=format:'%H' > logSHA.txt")
+    }
+
+    log.info(shaTime+" "+shaSpace+" "+commitSHAList)
+
+
+    val (rddTime, rddSpace, rdd) = performance {
+      val inputRDD = spark.textFile(cdProjects + "/" + reponame + "/logSHA.txt")
+      inputRDD.map(sha => {
+        log.info("THIS IS SHA " + sha)
+        println(sha+" SHA!!!!")
+        sha})
+
+    }
+
+    rdd.saveAsTextFile("finalRES2")
+    log.info(s"git clone time : ${rddTime.milliseconds}")
+    log.info(s"git clone time : ${rddSpace.memUsed}")
+    log.info("DONE")
+
+    spark.stop()
+
+
+  }
+
+  def main1(args: Array[String]) {
     val log = LoggerFactory.getLogger(Ingestion.getClass)
     val conf = new SparkConf().setAppName("LineCount File I/O")
     val spark = new SparkContext(conf)
@@ -71,7 +119,8 @@ object Ingestion extends gitbash.GitBashExec {
       inputRDD.map(sha => {
         log.info("THIS IS SHA " + sha)
         println(sha+" SHA!!!!")
-        gitExec(s"sh src/main/scala/scratch.sh $sha $reponame $branchname")
+        val bashRes = gitExec(s"sh src/main/scala/scratch.sh $sha $reponame $branchname")
+        log.info("This is the bash resut"+bashRes)
         log.info("done executing bash file")
         val clocResultFile = Source.fromFile("/scratch/sshilpika/" + reponame + "/results/" + sha + "_clocByFile.txt") getLines ()
 
@@ -84,6 +133,7 @@ object Ingestion extends gitbash.GitBashExec {
               val filename = filepath.replaceAll("\\.", "")
               val collectionName = filename.replaceFirst("/", "").replaceAll("/", "_")
               val loc = blank.toInt + comment.toInt + code.toInt
+              log.info("loc!!! "+loc)
               val dateFile = Source.fromFile("/scratch/sshilpika/" + reponame + "/results/" + sha + "_date.txt").getLines()
               val commitDate = if(dateFile.hasNext) dateFile.next() else  ""
               val output = raw"""{"date": "$commitDate" ,"commitSha": "$sha","loc": $loc,"filename": "$filepath","sorted": false}""".parseJson
