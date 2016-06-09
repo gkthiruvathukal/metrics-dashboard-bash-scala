@@ -38,7 +38,7 @@ object Ingestion extends gitbash.GitBashExec {
     parser.parse(args, Config())
   }
 
-  def main(args: Array[String]): Unit = {
+  def main1(args: Array[String]): Unit = {
     val log = LoggerFactory.getLogger(Ingestion.getClass)
     val conf = new SparkConf().setAppName("Metrics Data - KLOC")
     val spark = new SparkContext(conf)
@@ -85,7 +85,7 @@ object Ingestion extends gitbash.GitBashExec {
 
   }
 
-  def main1(args: Array[String]) {
+  def main(args: Array[String]) {
     val log = LoggerFactory.getLogger(Ingestion.getClass)
     val conf = new SparkConf().setAppName("LineCount File I/O")
     val spark = new SparkContext(conf)
@@ -117,7 +117,7 @@ object Ingestion extends gitbash.GitBashExec {
     gitExec("cd " + cdProjects + "/" + reponame + " && mkdir commits")
     inputRDD.map(sha => {
 
-      val bashRes = gitExec(s"sh src/main/scala/scratch.sh $sha $reponame $branchname")
+      val bashRes = gitExec(cdProjects+s"/scratch.sh $sha $reponame $branchname")
       val clocResultFile = Source.fromFile("/scratch/sshilpika/" + reponame + "/results/" + sha + "_clocByFile.txt") getLines ()
 
       val clocResultSorted = clocResultFile.filter(_.startsWith("./")).map(clocs => {
