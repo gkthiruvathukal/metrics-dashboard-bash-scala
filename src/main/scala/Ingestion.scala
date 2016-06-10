@@ -38,7 +38,7 @@ object Ingestion extends gitbash.GitBashExec {
     parser.parse(args, Config())
   }
 
-  def main1(args: Array[String]): Unit = {
+  def main(args: Array[String]): Unit = {
     val log = LoggerFactory.getLogger(Ingestion.getClass)
     val conf = new SparkConf().setAppName("Metrics Data - KLOC")
     val spark = new SparkContext(conf)
@@ -85,7 +85,7 @@ object Ingestion extends gitbash.GitBashExec {
 
   }
 
-  def main(args: Array[String]) {
+  def main1(args: Array[String]) {
     val log = LoggerFactory.getLogger(Ingestion.getClass)
     val conf = new SparkConf().setAppName("LineCount File I/O")
     val spark = new SparkContext(conf)
