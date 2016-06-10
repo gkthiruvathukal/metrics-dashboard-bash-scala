@@ -119,7 +119,7 @@ object Ingestion extends gitbash.GitBashExec {
       gitExec("chmod 744 src/main/scala/scratch.sh")
     inputRDD.map(sha => {
 
-      gitExec(cdProjects+s"src/main/scala/scratch.sh $sha $reponame $branchname $username")
+      gitExec(s"src/main/scala/scratch.sh $sha $reponame $branchname $username")
       val clocResultFile = Source.fromFile("/scratch/sshilpika/" + reponame + "/results/" + sha + "_clocByFile.txt") getLines ()
 
       val clocResultSorted = clocResultFile.filter(_.startsWith("./")).map(clocs => {
