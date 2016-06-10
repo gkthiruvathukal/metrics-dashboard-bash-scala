@@ -8,6 +8,7 @@ echo ${args[0]} 'is the sha for the cloned repo'
 sha=${args[0]}
 reponame=${args[1]}
 branchname=${args[2]}
+username=${args[3]}
 
 cd /scratch/
 
@@ -25,7 +26,7 @@ fi
 
 # repo
 if [ ! -d ${reponame} ]; then
-     git clone /projects/ExaHDF5/sshilpika/${reponame} /scratch/sshilpika/${reponame}
+     git clone https://github.com/${username}/${reponame}.git
 fi
 
 cd ${reponame}
