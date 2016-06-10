@@ -14,6 +14,8 @@ import org.slf4j.LoggerFactory
 import spray.json._
 import DefaultJsonProtocol._
 import squants.time._
+import java.nio.file._
+import collection.JavaConversions._
 import java.io.{ FileOutputStream, File, PrintWriter }
 object Ingestion extends gitbash.GitBashExec {
 
@@ -113,42 +115,46 @@ object Ingestion extends gitbash.GitBashExec {
 
     // create RDD to make copies of commit objects locally -- one folder per commit object -- abort this if memory is insufficient
     val (rddTime, rddSpace, rdd) = performance {
-    val inputRDD = spark.textFile(cdProjects + "/" + reponame + "/logSHA.txt")
+      val inputRDD = spark.textFile(cdProjects + "/" + reponame + "/logSHA.txt")
 
-    gitExec("cd " + cdProjects + "/" + reponame + " && mkdir commits")
+      gitExec("cd " + cdProjects + "/" + reponame + " && mkdir commits")
       gitExec("chmod 744 src/main/scala/scratch.sh")
-    inputRDD.map(sha => {
+      inputRDD.map(sha => {
 
-      gitExec(s"src/main/scala/scratch.sh $sha $reponame $branchname $username")
-      val clocResultFile = Source.fromFile("/scratch/sshilpika/" + reponame + "/results/" + sha + "_clocByFile.txt") getLines ()
+        gitExec(s"src/main/scala/scratch.sh $sha $reponame $branchname $username")
+        val path = Paths.get("/scratch/sshilpika/" + reponame + "/results/" + sha + "_clocByFile.txt")
+        val clocResultFile = Files.readAllLines(path).iterator()
 
-      val clocResultSorted = clocResultFile.filter(_.startsWith("./")).map(clocs => {
-        val data = Try(clocs.split(" +")) getOrElse (Array(""))
-        data match {
-          case Array(filepath, blank, comment, code) =>
+        val clocResultSorted = clocResultFile.filter(_.startsWith("./")).map(clocs => {
+          val data = Try(clocs.split(" +")) getOrElse (Array(""))
+          data match {
+            case Array(filepath, blank, comment, code) =>
 
-            // store the results here
-            val filename = filepath.replaceAll("\\.", "")
-            val collectionName = filename.replaceFirst("/", "").replaceAll("/", "_")
-            val loc = blank.toInt + comment.toInt + code.toInt
-            log.info("loc!!! " + loc)
-            val dateFile = Source.fromFile("/scratch/sshilpika/" + reponame + "/results/" + sha + "_date.txt").getLines()
-            val commitDate = if (dateFile.hasNext) dateFile.next() else ""
-            val output = raw"""{"date": "$commitDate" ,"commitSha": "$sha","loc": $loc,"filename": "$filepath","sorted": false}""".parseJson
-            println(output.compactPrint)
-            log.info(output.compactPrint)
-            output
-          case _ =>
-            println("error!!!")
-            raw"""{"error":"This is malformed cloc result for $sha"}""".parseJson
-        }
+              // store the results here
+              log.info(filepath + " " + blank + " " + comment + " " + code)
+              val filename = filepath.replaceAll("\\.", "")
+              val collectionName = filename.replaceFirst("/", "").replaceAll("/", "_")
+              val loc = blank.toInt + comment.toInt + code.toInt
+              log.info("loc!!! " + loc)
+              val pathDate = Paths.get("/scratch/sshilpika/" + reponame + "/results/" + sha + "_date.txt")
+              val dateFile = Files.readAllLines(pathDate).iterator()
+              val commitDate = if (dateFile.hasNext) dateFile.next() else ""
+              log.info(commitDate + " Commit Date")
+              val output = raw"""{"date": "$commitDate" ,"commitSha": "$sha","loc": $loc,"filename": "$filepath","sorted": false}""".parseJson
+              println(output.compactPrint)
+              log.info(output.compactPrint)
+              output
+            case _ =>
+              println("error!!!")
+              raw"""{"error":"This is malformed cloc result for $sha"}""".parseJson
+          }
+        })
+        val writer = new PrintWriter(new FileOutputStream(new File("/projects/ExaHDF5/sshilpika/" + reponame + "/" + sha + ".txt"), true))
+        clocResultSorted.foreach(x => writer.append(x.compactPrint))
+        writer.close()
+        gitCommitsListExec("cd /scratch/sshilpika/" + reponame + "/commitsMetrics && rm -rf " + sha)
+        "/projects/ExaHDF5/sshilpika/" + reponame + "/" + sha + ".txt"
       })
-      val writer = new PrintWriter(new FileOutputStream(new File("/projects/ExaHDF5/sshilpika/" + reponame + "/" + sha + ".txt"), true))
-      clocResultSorted.foreach(x => writer.append(x.compactPrint))
-      writer.close()
-      gitCommitsListExec("cd /scratch/sshilpika/" + reponame + "/commitsMetrics && rm -rf " + sha)
-      "/projects/ExaHDF5/sshilpika/" + reponame + "/" + sha + ".txt"
-    })
     }
     rdd.saveAsTextFile("finalRES")
     log.info("Statistics")
